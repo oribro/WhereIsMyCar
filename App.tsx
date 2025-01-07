@@ -5,113 +5,89 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  Alert,
+  PermissionsAndroid,
+  Platform,
   StyleSheet,
-  Text,
-  useColorScheme,
   View,
 } from 'react-native';
+import MapView from 'react-native-maps';
+import Geolocation from '@react-native-community/geolocation';
+import {Marker} from 'react-native-maps';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+function App(): React.JSX.Element {
+  const [location, setLocation] = useState(undefined);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  const getUsersCurrentLocation = () => {
+    Geolocation.getCurrentPosition(position => {
+      console.log(position);
+      setLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    });
+  };
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('granted');
+          getUsersCurrentLocation();
+        } else {
+          Alert.alert('Permission Denied');
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+  };
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  useEffect(() => {
+    requestLocationPermission();
+  });
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={styles.mapContainer}>
+      <MapView style={styles.map} region={location} showsUserLocation={true}>
+        <Marker
+          coordinate={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }}
+          title={'My marker'}
+          //description={marker.description}
+        />
+      </MapView>
     </View>
   );
 }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  map: {
+    ...StyleSheet.absoluteFillObject,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  mapContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  highlight: {
-    fontWeight: '700',
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#DDDDDD',
+    padding: 10,
+    marginBottom: 10,
+    width: 200,
   },
 });
 
